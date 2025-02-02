@@ -6,7 +6,11 @@ package track
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"strconv"
 )
+
+var score int
+var url string
 
 // dayCmd represents the day command
 var dayCmd = &cobra.Command{
@@ -18,14 +22,31 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("day called")
+	// Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+	Args: func(cmd *cobra.Command, args []string) error {
+		// Optionally run one of the validators provided by cobra
+		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
+			return err
+		}
+		number, err := strconv.Atoi(args[0])
+		if err != nil {
+			fmt.Println("argument must be between 1 and 5")
+		}
+		// Run the custom validation logic
+		if number >= 1 && number <= 5 {
+			score = number
+			return nil
+		}
+		return fmt.Errorf("invalid score (must be between 1 and 5): %s", args[0])
+	}, Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("day called with score: %d\n", score)
 	},
 }
 
 func init() {
-	// rootCmd.AddCommand(dayCmd)
-
+	// dayCmd.Flags().StringArrayVarP(&url, "url", "u", "", "The url")
+	// dayCmd.ValidArgs(*[]"score")
+	// dayCmd.Args(int(&score))
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
