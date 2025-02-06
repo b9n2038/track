@@ -4,44 +4,39 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"github.com/b9n2038/act/cmd/track"
-	"github.com/spf13/cobra"
+	"github.com/b9n2038/act/pkg/track/adapters/primary/cli"
+	"github.com/b9n2038/act/pkg/track/adapters/secondary/file"
+	"github.com/b9n2038/act/pkg/track/application/rating"
+	"log"
 	"os"
+	"path/filepath"
 )
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "act",
-	Short: "Little goodies to keep you going.",
-	Long: `Life fulfillment helper.
-examples and usage of using your application. For example:
+// func Execute() {
+// 	err := rootCmd.Execute()
+// 	if err != nil {
+// 		os.Exit(1)
+// 	}
+// }
+//
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
+func main() {
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		os.Exit(1)
+		log.Fatal(err)
 	}
-}
 
-func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
+	repoPath := filepath.Join(homeDir, ".track.rating.json")
+	repo, err := file.NewFileRepository(repoPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.act.yaml)")
+	// Setup service
+	service := rating.NewService(repo)
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.AddCommand(track.TrackCmd)
+	rootCmd := cli.NewRootCmd(service)
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }
