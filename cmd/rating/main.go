@@ -4,9 +4,9 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"github.com/b9n2038/act/pkg/track/adapters/primary/cli"
-	"github.com/b9n2038/act/pkg/track/adapters/secondary/file"
-	"github.com/b9n2038/act/pkg/track/application/rating"
+	"act/pkg/track/adapters/primary/cli"
+	"act/pkg/track/adapters/secondary/file"
+	"act/pkg/track/application/rating"
 	"log"
 	"os"
 	"path/filepath"

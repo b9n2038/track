@@ -3,7 +3,7 @@ package rating
 
 import (
 	"context"
-	"github.com/b9n2038/act/pkg/track/domain"
+	"act/pkg/track/domain"
 	"time"
 )
 

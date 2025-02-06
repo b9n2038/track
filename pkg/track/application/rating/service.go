@@ -6,8 +6,8 @@ import (
    "fmt"
    "time"
 
-   "github/b9n2038/act/pkg/track/domain/rating"
-   "github/b9n2038/act/pkg/track/ports/secondary"
+   "act/pkg/track/domain/rating"
+   "act/pkg/track/ports/secondary"
 )
 
 type Service struct {
