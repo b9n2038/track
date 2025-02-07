@@ -2,8 +2,8 @@
 package rating
 
 import (
+	"act/pkg/track/domain/rating"
 	"context"
-	"act/pkg/track/domain"
 	"time"
 )
 

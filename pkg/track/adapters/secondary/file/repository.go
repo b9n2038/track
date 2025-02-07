@@ -2,11 +2,11 @@
 package file
 
 import (
+	"act/pkg/track/domain/rating"
+	"act/pkg/track/ports/secondary"
 	"context"
 	"encoding/json"
 	"fmt"
-	"act/pkg/track/domain"
-	"act/pkg/track/ports/secondary"
 	"os"
 	"path/filepath"
 	"sync"
