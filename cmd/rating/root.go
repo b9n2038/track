@@ -12,12 +12,6 @@ import (
 	"path/filepath"
 )
 
-//	func Execute() {
-//		err := rootCmd.Execute()
-//		if err != nil {
-//			os.Exit(1)
-//		}
-//	}
 func Execute() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -33,7 +27,7 @@ func Execute() {
 	// Setup service
 	service := rating.NewService(repo)
 
-	rootCmd := cli.NewRootCmd(*service)
+	rootCmd := cli.NewRootCmd(service)
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}

@@ -54,10 +54,10 @@ type DayRating struct {
 }
 
 func (dr DayRating) Label() string {
-	// yr := dr.Date.Format("06")      // Last two digits of year
-	year, week := dr.Date.ISOWeek() // Get ISO week number
-	weekday := dr.Date.Weekday()    // Get day of week (0-6)
-	return fmt.Sprintf("%sw%02d-%d", year, week, weekday)
+	yr := dr.Date.Format("06")   // Last two digits of year
+	_, week := dr.Date.ISOWeek() // Get ISO week number
+	weekday := dr.Date.Weekday() // Get day of week (0-6)
+	return fmt.Sprintf("%sw%02d-%d", yr, week, weekday)
 }
 
 func (dr DayRating) String() string {

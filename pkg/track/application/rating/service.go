@@ -139,3 +139,43 @@ func (s *Service) UpdateTodayRating(ctx context.Context, r rating.Rating) (ratin
 
 	return dayRating, nil
 }
+
+func (s *Service) GetLastRatingBefore(ctx context.Context, date time.Time) (rating.DayRating, error) {
+	// Implementation to get the last rating before the given date
+	ratings, err := s.repo.GetByDateRange(ctx, date.AddDate(0, 0, -30), date)
+	if err != nil {
+		return rating.DayRating{}, err
+	}
+
+	var lastRating rating.DayRating
+	for _, r := range ratings {
+		if r.Date.Before(date) && (lastRating.Date.IsZero() || r.Date.After(lastRating.Date)) {
+			lastRating = r
+		}
+	}
+
+	return lastRating, nil
+}
+
+func (s *Service) FillMissingRatings(ctx context.Context, start, end time.Time, r rating.Rating) ([]rating.DayRating, error) {
+	var filled []rating.DayRating
+
+	current := start.AddDate(0, 0, 1)
+	for current.Before(end) {
+		_, week := current.ISOWeek()
+		// Check if rating exists for this day
+		id := fmt.Sprintf("%sw%02d-%d", current.Format("06"), week, current.Weekday())
+		_, err := s.repo.GetByID(ctx, id)
+		if err == rating.ErrNotFound {
+			// Add rating for this day
+			dayRating, err := s.AddDayRating(ctx, current, r)
+			if err != nil {
+				return filled, err
+			}
+			filled = append(filled, dayRating)
+		}
+		current = current.AddDate(0, 0, 1)
+	}
+
+	return filled, nil
+}
