@@ -24,10 +24,10 @@ func Execute() {
 		log.Fatal(err)
 	}
 
-	// Setup service
-	service := rating.NewService(repo)
+	ratingService := rating.NewService(repo)
+	// service := rating.NewService(repo)
 
-	rootCmd := cli.NewRootCmd(service)
+	rootCmd := cli.NewRootCmd(ratingService)
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
