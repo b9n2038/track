@@ -38,7 +38,7 @@ func NewMarkdownStorage(baseDir string) secondary.ListStorage {
 }
 
 func (s *markdownStorage) getListPath(name string) string {
-	return filepath.Join(s.baseDir, fmt.Sprintf("%s.md", name))
+	return filepath.Join(s.baseDir, ".short", fmt.Sprintf("%s.md", name))
 }
 
 func (s *markdownStorage) Exists(name string) bool {
