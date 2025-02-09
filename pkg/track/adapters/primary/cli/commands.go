@@ -17,7 +17,7 @@ import (
 func NewRootCmd(service *ratingService.Service) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "rating",
-		Short: "Day rating management tool",
+		Short: "Day rating tool",
 	}
 
 	rootCmd.AddCommand(

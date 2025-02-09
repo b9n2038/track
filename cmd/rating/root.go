@@ -25,7 +25,6 @@ func Execute() {
 	}
 
 	ratingService := rating.NewService(repo)
-	// service := rating.NewService(repo)
 
 	rootCmd := cli.NewRootCmd(ratingService)
 	if err := rootCmd.Execute(); err != nil {
