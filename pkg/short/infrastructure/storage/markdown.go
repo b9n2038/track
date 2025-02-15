@@ -21,8 +21,7 @@ var (
 
 type markdownStorage struct {
 	baseDir string
-	// locks   map[string]*fileLock
-	mu sync.Mutex // Protects the locks map
+	mu      sync.Mutex // Protects the locks map
 }
 
 type fileLock struct {
@@ -33,18 +32,26 @@ type fileLock struct {
 func NewMarkdownStorage(baseDir string) secondary.ListStorage {
 	return &markdownStorage{
 		baseDir: baseDir,
-		// locks:   make(map[string]*fileLock),
 	}
 }
 
 func (s *markdownStorage) getListPath(name string) string {
-	return filepath.Join(s.baseDir, ".short", fmt.Sprintf("%s.md", name))
+	// Sanitizes list names for file safety
+	safeName := strings.Map(func(r rune) rune {
+		if strings.ContainsRune("/\\?%*:|\"<>", r) {
+			return '_'
+		}
+		return r
+	}, name)
+
+	return filepath.Join(s.baseDir, fmt.Sprintf("%s.md", safeName))
 }
 
 func (s *markdownStorage) Exists(name string) bool {
 	_, err := os.Stat(s.getListPath(name))
 	return err == nil
 }
+
 func (s *markdownStorage) acquireLock(lock *fileLock) error {
 	ctx, cancel := context.WithTimeout(context.Background(), lockTimeout)
 	defer cancel()
@@ -62,6 +69,7 @@ func (s *markdownStorage) acquireLock(lock *fileLock) error {
 		return fmt.Errorf("%w: waited %v", ErrLockTimeout, lockTimeout)
 	}
 }
+
 func (s *markdownStorage) Load(name string) (*model.ShortList, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

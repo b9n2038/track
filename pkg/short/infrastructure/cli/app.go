@@ -5,8 +5,13 @@ import (
 	"act/pkg/short/domain/model"
 	"act/pkg/short/domain/ports/primary"
 	"fmt"
-	"github.com/spf13/cobra"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type App struct {
@@ -14,16 +19,70 @@ type App struct {
 	rootCmd *cobra.Command
 }
 
-func NewApp(service primary.ListService) *App {
-	app := &App{
-		service: service,
-		rootCmd: &cobra.Command{
-			Use:   "short",
-			Short: "Short List - Helping you separate the critictal few from the trivial many. ",
-			Long:  "Life is short, lists are long, unless... You can use a finite list manager.A finite list manager.",
-		},
+type Profile struct {
+	Name    string
+	BaseDir string
+	// other profile-specific fields
+}
+
+type Config struct {
+	CurrentProfile string
+	Profiles       map[string]Profile
+}
+
+func LoadConfig() (*Config, error) {
+	viper.SetConfigName(".short")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("$HOME")
+	viper.AddConfigPath("$HOME/.short")
+	viper.AddConfigPath(".")
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Create default config
+			return &Config{
+				Profiles: make(map[string]Profile),
+			}, nil
+		}
+		return nil, err
 	}
 
+	var config Config
+	if err := viper.Unmarshal(&config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func NewApp(service primary.ListService) *App {
+	var pathFlag string
+
+	rootCmd := &cobra.Command{
+		Use:   "short",
+		Short: "Short List - Helping you separate the critictal few from the trivial many. ",
+		Long:  "Life is short, lists are long... Maybe this will a finite list tool can help? ",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			path, _ := cmd.Flags().GetString("path")
+			fmt.Println("PersistentPreRun", path)
+			pathFlag = path
+		},
+	}
+	rootCmd.PersistentFlags().StringVarP(&pathFlag, "path", "p", "", "Override default storage location")
+
+	app := &App{
+		service: service,
+		rootCmd: rootCmd,
+	}
+
+	// config, err := LoadConfig()
+	// if config == nil || err != nil {
+	// 	fmt.Println("no config")
+	// } else {
+	// 	fmt.Println("found config", config.CurrentProfile)
+	// }
+	//
+	fmt.Println("pathFlag", pathFlag)
 	app.setupCommands()
 	return app
 }
@@ -41,6 +100,39 @@ func (a *App) setupCommands() {
 		a.newOpenCommand(),
 		a.newConfigCommand(),
 	)
+}
+
+func (a *App) GetStoragePath() string {
+
+	path1, _ := a.rootCmd.PersistentFlags().GetString("path")
+	path2, _ := a.rootCmd.Flags().GetString("path")
+	path3, _ := a.rootCmd.InheritedFlags().GetString("path")
+
+	fmt.Printf("Debug - PersistentFlags path: %q\n", path1)
+	fmt.Printf("Debug - Flags path: %q\n", path2)
+	fmt.Printf("Debug - InheritedFlags path: %q\n", path3)
+
+	path, _ := a.rootCmd.Flags().GetString("path")
+	if path == "" {
+		return ""
+	}
+
+	if strings.HasPrefix(path, "~/") {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			path = filepath.Join(home, path[2:])
+		}
+	}
+	// Convert to absolute path
+	if !filepath.IsAbs(path) {
+		currentDir, err := os.Getwd()
+		if err == nil {
+			path = filepath.Join(currentDir, path)
+		}
+	}
+
+	// Clean the path to remove any .. or . elements
+	return filepath.Clean(path)
 }
 
 func (a *App) newAddListCommand() *cobra.Command {
