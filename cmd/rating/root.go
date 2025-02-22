@@ -4,9 +4,9 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"act/pkg/track/adapters/primary/cli"
-	"act/pkg/track/adapters/secondary/file"
-	"act/pkg/track/application/rating"
+	"track/internal/track/adapters/primary/cli"
+	"track/internal/track/adapters/secondary/file"
+	"track/internal/track/application/rating"
 	"log"
 	"os"
 	"path/filepath"
