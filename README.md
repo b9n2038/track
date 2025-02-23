@@ -1,19 +1,20 @@
-# Day rating
+# Track
+
+Track things like:
+1. Day scoring / rating
+2. *Effort*
 
 ## Usage 
 
-track day set 4
-
-same as
-
-track day 4
+```
+track day set 3
+```
 
 
-## Issues
+## Why
 
-1. when adding for a day of week, support a shortcut for the day name, and maybe a mon or --weekday mon -d mon as well as the iso spec and yesterday, tomorrow
-2. list for current week not ordered by day
+I've tried Jim Collins day scoring appoach in the past where he scores his days between -2 to +2, but I wasn't as consistent as I wanted to be.
 
-## Feature
-1. sketchy-bar integration, show rating for today? or trend?
+This is simpler and tailored.
+
 

@@ -2,15 +2,16 @@
 package file
 
 import (
-	"track/internal/track/domain/rating"
-	"track/internal/track/ports/secondary"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
+	"track/internal/track/domain/rating"
+	"track/internal/track/ports/secondary"
 )
 
 type FileRepository struct {
@@ -109,6 +110,7 @@ func (r *FileRepository) GetByWeek(_ context.Context, year, week int) ([]rating.
 			results = append(results, dr)
 		}
 	}
+	sort.Slice(results, func(i, j int) bool { return results[i].Label() < results[j].Label() })
 
 	return results, nil
 }
