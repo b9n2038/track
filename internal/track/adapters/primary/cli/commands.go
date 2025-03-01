@@ -64,7 +64,7 @@ func parseDayID(id string) (time.Time, error) {
 	week, _ := strconv.Atoi(id[3:5])
 	day, _ := strconv.Atoi(id[6:])
 
-	//use the modulo
+	day = day % 7
 	if day < 1 || day > 7 {
 		return time.Time{}, fmt.Errorf("invalid format, isoWeekDay range from 0-6, with Mon as start of the week")
 	}
@@ -94,12 +94,14 @@ func parseDayID(id string) (time.Time, error) {
 func newSetCmd(service *ratingService.Service) *cobra.Command {
 	var (
 		dayID    string
+		weekday  string
+		target   time.Time
 		fillGaps bool
 	)
 
 	cmd := &cobra.Command{
 		Use:   "set [rating]",
-		Short: "Set a day rating between 1 and 5, for today",
+		Short: "Set a day rating between 1 and 5, for today.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -109,51 +111,76 @@ func newSetCmd(service *ratingService.Service) *cobra.Command {
 				return err
 			}
 
-			if dayID == "" {
-				// Add rating for today
-				_, err := service.SetDayRating(ctx, time.Now(), value)
-				if err != nil {
-					return err
-				}
+			target = time.Now()
 
-				//fmt.Printf("rating: %s\n", dayRating)
-			} else {
+			if dayID != "" {
 				// Add rating for specified day
-				date, err := parseDayID(dayID)
+				parsedDate, err := parseDayID(dayID)
 				if err != nil {
-					return fmt.Errorf("invalid day ID format: %w", err)
-				}
-
-				// fmt.Println("parseDayID", date.Local())
-				_, err = service.SetDayRating(ctx, date, value)
-				if err != nil {
+					fmt.Errorf("invalid day ID format: %w", err)
 					return err
 				}
-				//fmt.Printf("Added rating for %s: %s\n", dayID, dayRating)
-
-				// Fill gaps if requested
-				if fillGaps {
-					lastRating, err := service.GetLastRatingBefore(ctx, date)
-					if err != nil {
-						return fmt.Errorf("getting last rating: %w", err)
-					}
-
-					if !lastRating.Date.IsZero() {
-						filled, err := service.FillMissingRatings(ctx, lastRating.Date, date, value)
-						if err != nil {
-							return fmt.Errorf("filling gaps: %w", err)
-						}
-						if len(filled) > 0 {
-							fmt.Printf("Filled %d missing days with rating %s\n", len(filled), value.String())
-						}
-					}
-				}
+				target = time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 0, 0, 0, 0, time.UTC)
 			}
 
+			if weekday != "" {
+				fmt.Printf("handle weekday %s set\n", weekday)
+				iWeekday, iWeekdayErr := strconv.Atoi(weekday)
+				if iWeekdayErr != nil {
+					fmt.Errorf("invalid weekday format: %w", iWeekdayErr)
+					return iWeekdayErr
+				}
+				weekday := iWeekday
+				_, week := target.ISOWeek()
+
+				start_yr, start_mth, start_day := isoweek.StartDate(target.Year(), week)
+				fmt.Printf("start of isoweek %d, %d, %s, %d\n", week, start_yr, start_mth, start_day)
+				target = time.Date(start_yr, start_mth, start_day, 0, 0, 0, 0, time.UTC)
+				target = target.AddDate(0, 0, weekday-1)
+				fmt.Printf("target %d, %d, %d\n", target.Year(), target.Month(), target.Day())
+
+			}
+			_, err = service.SetDayRating(ctx, target, value)
+			if err != nil {
+				return err
+			}
+
+			//fmt.Printf("rating: %s\n", dayRating)
+			// } else {
+			//
+			//
+			// 	// fmt.Println("parseDayID", date.Local())
+			// 	_, err = service.SetDayRating(ctx, date, value)
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	//fmt.Printf("Added rating for %s: %s\n", dayID, dayRating)
+			//
+			// 	// Fill gaps if requested
+			// 	if fillGaps {
+			// 		lastRating, err := service.GetLastRatingBefore(ctx, date)
+			// 		if err != nil {
+			// 			return fmt.Errorf("getting last rating: %w", err)
+			// 		}
+			//
+			// 		if !lastRating.Date.IsZero() {
+			// 			filled, err := service.FillMissingRatings(ctx, lastRating.Date, date, value)
+			// 			if err != nil {
+			// 				return fmt.Errorf("filling gaps: %w", err)
+			// 			}
+			// 			if len(filled) > 0 {
+			// 				fmt.Printf("Filled %d missing days with rating %s\n", len(filled), value.String())
+			// 			}
+			// 		}
+			// }
+			// },
+			//
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&dayID, "day", "d", "", "Day ID in format YYwWW-D (e.g., 25w05-3)")
+	//may combine these
+	cmd.Flags().StringVarP(&dayID, "long", "l", "", "Day ID in format YYwWW-D. 25w05-3")
+	cmd.Flags().StringVarP(&weekday, "weekday", "d", "", "Week Day 1-7 (e.g. 1 = Monday")
 	cmd.Flags().BoolVarP(&fillGaps, "fill", "f", false, "Fill missing days from last entry")
 	return cmd
 }

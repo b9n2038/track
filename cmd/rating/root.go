@@ -4,12 +4,12 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"track/internal/track/adapters/primary/cli"
-	"track/internal/track/adapters/secondary/file"
-	"track/internal/track/application/rating"
 	"log"
 	"os"
 	"path/filepath"
+	"track/internal/track/adapters/primary/cli"
+	"track/internal/track/adapters/secondary/file"
+	"track/internal/track/application/rating"
 )
 
 func Execute() {
@@ -18,6 +18,7 @@ func Execute() {
 		log.Fatal(err)
 	}
 
+	//todo: make configurable
 	repoPath := filepath.Join(homeDir, ".track.rating.json")
 	repo, err := file.NewFileRepository(repoPath)
 	if err != nil {
