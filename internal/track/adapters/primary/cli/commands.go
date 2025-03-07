@@ -124,7 +124,7 @@ func newSetCmd(service *ratingService.Service) *cobra.Command {
 			}
 
 			if weekday != "" {
-				fmt.Printf("handle weekday %s set\n", weekday)
+				// fmt.Printf("handle weekday %s set\n", weekday)
 				iWeekday, iWeekdayErr := strconv.Atoi(weekday)
 				if iWeekdayErr != nil {
 					fmt.Errorf("invalid weekday format: %w", iWeekdayErr)
@@ -134,10 +134,10 @@ func newSetCmd(service *ratingService.Service) *cobra.Command {
 				_, week := target.ISOWeek()
 
 				start_yr, start_mth, start_day := isoweek.StartDate(target.Year(), week)
-				fmt.Printf("start of isoweek %d, %d, %s, %d\n", week, start_yr, start_mth, start_day)
+				// fmt.Printf("start of isoweek %d, %d, %s, %d\n", week, start_yr, start_mth, start_day)
 				target = time.Date(start_yr, start_mth, start_day, 0, 0, 0, 0, time.UTC)
 				target = target.AddDate(0, 0, weekday-1)
-				fmt.Printf("target %d, %d, %d\n", target.Year(), target.Month(), target.Day())
+				// fmt.Printf("target %d, %d, %d\n", target.Year(), target.Month(), target.Day())
 
 			}
 			_, err = service.SetDayRating(ctx, target, value)

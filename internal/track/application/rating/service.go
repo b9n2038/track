@@ -34,7 +34,7 @@ func (s *Service) SetDayRating(ctx context.Context, date time.Time, r rating.Rat
 	_, week := date.ISOWeek()
 
 	dayId := fmt.Sprintf("%sw%02d-%d", date.Format("06"), week, isoWeekdayFromDate(date))
-	fmt.Printf("weekday %s", dayId)
+	//fmt.Printf("weekday %s", dayId)
 	dayRating := rating.DayRating{
 		ID:     dayId,
 		Date:   date,
