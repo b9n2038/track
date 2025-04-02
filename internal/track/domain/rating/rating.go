@@ -3,8 +3,6 @@ package rating
 import (
 	"fmt"
 	"time"
-
-	"github.com/snabb/isoweek"
 )
 
 type Rating int
@@ -56,9 +54,9 @@ type DayRating struct {
 }
 
 func (dr DayRating) Label() string {
-	yr := dr.Date.Format("06")   // Last two digits of year
-	_, week := dr.Date.ISOWeek() // Get ISO week number
-	weekday := isoweek.ISOWeekday(dr.Date.Year(), dr.Date.Month(), dr.Date.Day())
+	yr := dr.Date.Format("06") // Last two digits of year
+	_, week := dr.Date.ISOWeek()
+	weekday := dr.Date.Weekday()
 	return fmt.Sprintf("%sw%02d-%d", yr, week, weekday)
 }
 

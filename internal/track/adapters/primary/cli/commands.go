@@ -10,10 +10,8 @@ import (
 	//"track/internal/track/ports/primary/rating"
 	"context"
 	"fmt"
-	"time"
-
-	"github.com/snabb/isoweek"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 func NewRootCmd(ratingService *ratingService.Service) *cobra.Command {
@@ -53,7 +51,6 @@ func parseInt(s string) int {
 }
 
 // Helper function to parse day ID format YYwWW-D
-// this is broken
 func parseDayID(id string) (time.Time, error) {
 	// Parse format: YYwWW-D
 	if len(id) != 7 || id[2] != 'w' || id[5] != '-' {
@@ -65,20 +62,17 @@ func parseDayID(id string) (time.Time, error) {
 	day, _ := strconv.Atoi(id[6:])
 
 	day = day % 7
-	if day < 1 || day > 7 {
-		return time.Time{}, fmt.Errorf("invalid format, isoWeekDay range from 0-6, with Mon as start of the week")
+	if day < 0 || day > 7 {
+		return time.Time{}, fmt.Errorf("invalid format, isoWeekDay range from 1-7, with Mon as start of the week")
 	}
 
-	// Get the date for the start of the week
-	// date1 := isoWeekStart(year, week)
-	// fmt.Println("date for start of week", date1.Local())
+	//d,w,y => d, m, y
+	//startDate, convert to ordinal days, add weeks, plus day
 
-	//get start of date
-	startYr, startMth, startDay := isoweek.StartDate(year, week)
-
-	date := time.Date(startYr, startMth, startDay, 0, 0, 0, 0, time.UTC)
-	// Add days
-	date = date.AddDate(0, 0, day-1)
+	// get the absDay of start of year and add week days + weekday
+	start := time.Date(year, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
+	days := ((week - 1) * 7) + day
+	date := start.Add(time.Duration(time.Second.Nanoseconds() * int64(86400*days))) //int64(days * time.Second)))
 
 	return date, nil
 }
@@ -93,10 +87,9 @@ func parseDayID(id string) (time.Time, error) {
 //	}
 func newSetCmd(service *ratingService.Service) *cobra.Command {
 	var (
-		dayID    string
-		weekday  string
-		target   time.Time
-		fillGaps bool
+		dayID   string
+		weekday string
+		target  time.Time
 	)
 
 	cmd := &cobra.Command{
@@ -131,13 +124,13 @@ func newSetCmd(service *ratingService.Service) *cobra.Command {
 					return iWeekdayErr
 				}
 				weekday := iWeekday
-				_, week := target.ISOWeek()
+				year, week := target.ISOWeek()
 
-				start_yr, start_mth, start_day := isoweek.StartDate(target.Year(), week)
-				// fmt.Printf("start of isoweek %d, %d, %s, %d\n", week, start_yr, start_mth, start_day)
-				target = time.Date(start_yr, start_mth, start_day, 0, 0, 0, 0, time.UTC)
-				target = target.AddDate(0, 0, weekday-1)
-				// fmt.Printf("target %d, %d, %d\n", target.Year(), target.Month(), target.Day())
+				start := time.Date(year, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
+				days := ((week - 1) * 7) + weekday - 1
+				target = start.Add(time.Duration(time.Second.Nanoseconds() * int64(86400*days))) //int64(days * time.Second)))
+
+				fmt.Printf("target %d, %d, %d\n", target.Year(), target.Month(), target.Day())
 
 			}
 			_, err = service.SetDayRating(ctx, target, value)
@@ -178,17 +171,17 @@ func newSetCmd(service *ratingService.Service) *cobra.Command {
 			return nil
 		},
 	}
-	//may combine these
+
 	cmd.Flags().StringVarP(&dayID, "long", "l", "", "Day ID in format YYwWW-D. 25w05-3")
 	cmd.Flags().StringVarP(&weekday, "weekday", "d", "", "Week Day 1-7 (e.g. 1 = Monday")
-	cmd.Flags().BoolVarP(&fillGaps, "fill", "f", false, "Fill missing days from last entry")
+	// cmd.Flags().BoolVarP(&fillGaps, "fill", "f", false, "Fill missing days from last entry")
 	return cmd
 }
 
 func newListCmd(service *ratingService.Service) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List ratings for current week",
+		Short: "List ratings for a week, default current.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -205,6 +198,8 @@ func newListCmd(service *ratingService.Service) *cobra.Command {
 			return nil
 		},
 	}
+	// cmd.Flags().StringVarP(&dayID, "long", "l", "", "Day ID in format YYwWW-D. 25w05-3")
+	return cmd
 }
 
 func newWeekCmd(service *ratingService.Service) *cobra.Command {

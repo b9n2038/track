@@ -6,7 +6,6 @@ go 1.23.6
 
 require (
 	github.com/magiconair/properties v1.8.7
-	github.com/snabb/isoweek v1.0.3
 	github.com/spf13/cobra v1.8.1
 )
 

@@ -4,7 +4,6 @@ package rating
 import (
 	"context"
 	"fmt"
-	"github.com/snabb/isoweek"
 	"time"
 	"track/internal/track/domain/rating"
 	"track/internal/track/ports/secondary"
@@ -20,11 +19,6 @@ func NewService(repo secondary.RatingRepository) *Service {
 	}
 }
 
-func isoWeekdayFromDate(date time.Time) int {
-	day := isoweek.ISOWeekday(date.Year(), date.Month(), date.Day())
-	return day
-}
-
 // SetDayRating creates a new rating for a specific day
 func (s *Service) SetDayRating(ctx context.Context, date time.Time, r rating.Rating) (rating.DayRating, error) {
 	if !r.IsValid() {
@@ -33,7 +27,7 @@ func (s *Service) SetDayRating(ctx context.Context, date time.Time, r rating.Rat
 
 	_, week := date.ISOWeek()
 
-	dayId := fmt.Sprintf("%sw%02d-%d", date.Format("06"), week, isoWeekdayFromDate(date))
+	dayId := fmt.Sprintf("%sw%02d-%d", date.Format("06"), week, date.Weekday())
 	//fmt.Printf("weekday %s", dayId)
 	dayRating := rating.DayRating{
 		ID:     dayId,
@@ -53,7 +47,7 @@ func (s *Service) SetDayRating(ctx context.Context, date time.Time, r rating.Rat
 func (s *Service) GetTodayRating(ctx context.Context) (rating.DayRating, error) {
 	today := time.Now()
 	_, week := today.ISOWeek()
-	id := fmt.Sprintf("%sw%02d-%d", today.Format("06"), week, isoWeekdayFromDate(today))
+	id := fmt.Sprintf("%sw%02d-%d", today.Format("06"), week, today.Weekday())
 
 	return s.repo.GetByID(ctx, id)
 }
@@ -136,7 +130,7 @@ func (s *Service) UpdateTodayRating(ctx context.Context, r rating.Rating) (ratin
 	today := time.Now()
 	_, week := today.ISOWeek()
 	dayRating := rating.DayRating{
-		ID:     fmt.Sprintf("%sw%02d-%d", today.Format("06"), week, isoWeekdayFromDate(today)),
+		ID:     fmt.Sprintf("%sw%02d-%d", today.Format("06"), week, today.Weekday()),
 		Date:   today,
 		Rating: r,
 	}
@@ -172,7 +166,7 @@ func (s *Service) FillMissingRatings(ctx context.Context, start, end time.Time, 
 	for current.Before(end) {
 		_, week := current.ISOWeek()
 		// Check if rating exists for this day
-		id := fmt.Sprintf("%sw%02d-%d", current.Format("06"), week, isoWeekdayFromDate(current))
+		id := fmt.Sprintf("%sw%02d-%d", current.Format("06"), week, current.Weekday())
 		_, err := s.repo.GetByID(ctx, id)
 		if err == rating.ErrNotFound {
 			// Add rating for this day
