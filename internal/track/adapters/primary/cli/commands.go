@@ -77,6 +77,55 @@ func parseDayID(id string) (time.Time, error) {
 	return date, nil
 }
 
+// GetWeekdayInISOWeek returns the date for the specified weekday (1-7)
+// in the ISO week of the provided reference date
+func GetWeekdayInISOWeek(referenceDate time.Time, weekday int) (time.Time, error) {
+	if weekday < 1 || weekday > 7 {
+		return time.Time{}, fmt.Errorf("invalid weekday: %d, must be between 1 and 7", weekday)
+	}
+
+	// Get the ISO year and week of the reference date
+	year, week := referenceDate.ISOWeek()
+
+	// Calculate which day of the week the referenceDate is (in ISO terms, 1=Monday, 7=Sunday)
+	isoWeekday := int(referenceDate.Weekday())
+	if isoWeekday == 0 { // Sunday in Go is 0
+		isoWeekday = 7
+	}
+
+	// Calculate the offset to the target weekday
+	daysToAdd := weekday - isoWeekday
+
+	// Get the requested weekday in the same ISO week
+	targetDate := referenceDate.AddDate(0, 0, daysToAdd)
+
+	// Verify we're still in the same ISO week
+	targetYear, targetWeek := targetDate.ISOWeek()
+	if targetYear != year || targetWeek != week {
+		// This can only happen if we crossed a week boundary
+		// Adjust by a week
+		if daysToAdd < 0 {
+			// If we went back to the previous week, go forward a week
+			targetDate = targetDate.AddDate(0, 0, 7)
+		} else {
+			// If we went to the next week, go back a week
+			targetDate = targetDate.AddDate(0, 0, -7)
+		}
+	}
+
+	return targetDate, nil
+}
+
+// Helper function to convert ISO weekday (1-7) to Go's time.Weekday
+func convertToWeekday(isoWeekday int) time.Weekday {
+	// In ISO, 1=Monday, 7=Sunday
+	// In Go, 0=Sunday, 1=Monday, ..., 6=Saturday
+	if isoWeekday == 7 {
+		return time.Sunday
+	}
+	return time.Weekday(isoWeekday)
+}
+
 //	func isoWeekStart(year, week int) time.Time {
 //		// Find a day in the week
 //		jan4 := time.Date(year, 1, 4, 0, 0, 0, 0, time.Local)
@@ -117,21 +166,13 @@ func newSetCmd(service *ratingService.Service) *cobra.Command {
 			}
 
 			if weekday != "" {
-				// fmt.Printf("handle weekday %s set\n", weekday)
-				iWeekday, iWeekdayErr := strconv.Atoi(weekday)
+				day, iWeekdayErr := strconv.Atoi(weekday)
 				if iWeekdayErr != nil {
 					fmt.Errorf("invalid weekday format: %w", iWeekdayErr)
 					return iWeekdayErr
 				}
-				weekday := iWeekday
-				year, week := target.ISOWeek()
-
-				start := time.Date(year, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
-				days := ((week - 1) * 7) + weekday - 1
-				target = start.Add(time.Duration(time.Second.Nanoseconds() * int64(86400*days))) //int64(days * time.Second)))
-
-				fmt.Printf("target %d, %d, %d\n", target.Year(), target.Month(), target.Day())
-
+				target, _ = GetWeekdayInISOWeek(target, day)
+				// fmt.Printf("target %d, %d, %d\n", target.Year(), target.Month(), target.Day())
 			}
 			_, err = service.SetDayRating(ctx, target, value)
 			if err != nil {
